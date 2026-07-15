@@ -24,7 +24,7 @@ Earn DEX LP fees, as well as rewards from Berachain, Dinero, Infrared and Kodiak
       },
     },
     {
-      token_id: "98865-0x09d9420332bff75522a45fcff4855f82a0a3ff50",
+      token_id: "1-0x09d9420332bff75522a45fcff4855f82a0a3ff50",
       label: "Dinero Points",
 
       value: async ({ roycoClient, chainClient }) => {
@@ -48,6 +48,51 @@ Earn DEX LP fees, as well as rewards from Berachain, Dinero, Infrared and Kodiak
       value: async ({ roycoClient, chainClient }) => {
         const value = "Variable Rate";
         return value;
+      },
+    },
+  ],
+
+  native_yield: [
+    {
+      token_id: "1-0xaf5191b0de278c7286d6c7cc6ab6bb8a73ba2cd6",
+      label: "Stargate Incentives",
+      annual_change_ratio: async ({ roycoClient, chainClient }) => {
+        const STG_REWARD_AMOUNT = 1499250;
+        const LOCK_PERIOD_DAYS = 90;
+        let annual_change_ratio = 0;
+
+        try {
+          const market_req = await roycoClient.rpc("get_enriched_markets", {
+            chain_id: 1,
+            market_type: 0,
+            market_id:
+              "0xaf2a845c9d6007128b7aec375a4fcdee2b12bbaeb78caf928d3bd08e104417d6",
+            page_index: 0,
+            page_size: 1,
+          });
+
+          const market = market_req.data?.data?.[0];
+
+          const tokenQuotes = await roycoClient.rpc("get_token_quotes", {
+            token_ids: ["1-0xaf5191b0de278c7286d6c7cc6ab6bb8a73ba2cd6"],
+          });
+
+          const stgPrice = tokenQuotes.data?.[0]?.price ?? 0;
+
+          // Calculate annual STG rewards value
+          const annualRewardValueUSD =
+            STG_REWARD_AMOUNT * stgPrice * (365 / LOCK_PERIOD_DAYS);
+
+          // Calculate APY based on TVL
+          if (market?.total_value_locked && market.total_value_locked > 0) {
+            annual_change_ratio =
+              annualRewardValueUSD / market.total_value_locked;
+          }
+        } catch (error) {
+          console.error("Error fetching STG price:", error);
+        }
+
+        return annual_change_ratio;
       },
     },
   ],

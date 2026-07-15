@@ -5,8 +5,10 @@ import {
   arbitrum as arbitrumOne,
   base,
   corn,
-  plume,
   sonic,
+  berachain,
+  berachainTestnet,
+  plumeMainnet,
 } from "viem/chains";
 import { type Chain } from "viem/chains";
 
@@ -48,76 +50,79 @@ export const Corn = {
 };
 
 export const Plume = {
-  ...plume,
+  ...plumeMainnet,
   name: "Plume",
   image:
-    "https://pbs.twimg.com/profile_images/1854933222569975808/no3lt9ZL_400x400.jpg",
+    "https://cdn.prod.website-files.com/670fc97cba6a0b3f2e579538/6732070ff8b006c89bbc698e_Logomark%20Red.svg",
   symbol: "PLUME",
+  contracts: {
+    multicall3: {
+      address: "0xca11bde05977b3631167028862be2a173976ca11",
+      blockCreated: 39679,
+    },
+  } as const,
 };
 
 export const Sonic = {
   ...sonic,
   name: "Sonic",
-  image: "https://icons.llamao.fi/icons/chains/rsz_sonic.jpg",
+  image: "https://i.ibb.co/8L917D49/Vector-2x.png",
   symbol: "SONIC",
 };
 
 export const BerachainTestnet = defineChain({
-  id: 80000,
-  name: "Berachain cArtio",
-  nativeCurrency: {
-    name: "BERA Token",
-    symbol: "CBERA",
-    decimals: 18,
-  },
-  contracts: {
-    multicall3: {
-      address: "0xca11bde05977b3631167028862be2a173976ca11 ",
-      blockCreated: 121028,
-    },
-  },
-  rpcUrls: {
-    default: { http: ["https://app.royco.org/api/rpc/80000"] },
-  },
-  blockExplorers: {
-    default: {
-      name: "Berascan",
-      url: "https://80000.testnet.routescan.io",
-    },
-  },
+  ...berachainTestnet,
+  id: 80069,
   testnet: true,
   image:
     "https://pbs.twimg.com/profile_images/1775162753499508736/2XBUzQhl_400x400.jpg",
-  symbol: "CBERA",
+  symbol: "ABERA",
 });
 
 export const BerachainMainnet = defineChain({
-  id: 80094,
+  ...berachain,
   name: "Berachain",
-  nativeCurrency: {
-    name: "BERA Token",
-    symbol: "BERA",
-    decimals: 18,
-  },
-  contracts: {
-    multicall3: {
-      address: "0xca11bde05977b3631167028862be2a173976ca11 ",
-      blockCreated: 1,
-    },
-  },
-  rpcUrls: {
-    default: { http: ["https://app.royco.org/api/rpc/80094"] },
-  },
-  blockExplorers: {
-    default: {
-      name: "Berascan",
-      url: "https://80094.routescan.io",
-    },
-  },
   image:
     "https://pbs.twimg.com/profile_images/1775162753499508736/2XBUzQhl_400x400.jpg",
   symbol: "BERA",
 });
+
+export const hyperevm = defineChain({
+  id: 999,
+  name: "Hyper EVM",
+  nativeCurrency: {
+    name: "HYPE",
+    symbol: "HYPE",
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: ["http://rpc.hyperliquid.xyz/evm"],
+      webSocket: ["wss://rpc.hyperliquid.xyz/ws"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "Hyper Explorer",
+      url: "https://hyperliquid.cloud.blockscout.com",
+      apiUrl: "https://hyperliquid.cloud.blockscout.com/api",
+    },
+  },
+});
+
+export const Hyperevm = {
+  ...hyperevm,
+  name: "Hyper EVM",
+  image:
+    "https://pbs.twimg.com/profile_images/1646991609416806408/vKLEZxhh_400x400.png",
+  symbol: "HYPE",
+  contracts: {
+    multicall3: {
+      address: "0xca11bde05977b3631167028862be2a173976ca11",
+      blockCreated: 13051,
+    },
+  } as const,
+};
 
 export const SupportedChainMap: Record<number, SupportedChain> = {
   [ethereumSepolia.id]: EthereumSepolia,
@@ -125,10 +130,11 @@ export const SupportedChainMap: Record<number, SupportedChain> = {
   [arbitrumOne.id]: ArbitrumOne,
   [base.id]: Base,
   [corn.id]: Corn,
-  [plume.id]: Plume,
+  [Plume.id]: Plume,
   [sonic.id]: Sonic,
   [BerachainTestnet.id]: BerachainTestnet,
   [BerachainMainnet.id]: BerachainMainnet,
+  [Hyperevm.id]: Hyperevm,
 };
 
 export const SupportedChainlist = Object.values(SupportedChainMap);

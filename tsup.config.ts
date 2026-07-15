@@ -19,18 +19,35 @@ export default defineConfig({
     "sdk/types/index.tsx",
     "sdk/utils/index.tsx",
     "sdk/boyco/index.tsx",
+    "sdk/sonic/index.tsx",
+    "sdk/vault/index.tsx",
+    "sdk/transaction/index.ts",
+    "sdk/api/index.ts",
   ],
   format: ["cjs", "esm"],
   dts: true,
   external: [
     "react",
-    "react-dom",
-    "@metamask/sdk",
-    "@web3modal/wagmi",
     "@wagmi/core",
     "wagmi",
     "@tanstack/react-query",
     "@tanstack/react-table",
   ],
   target: "node14",
+  noExternal: [],
+  platform: "node",
+  skipNodeModulesBundle: true,
+  esbuildOptions(options) {
+    options.chunkNames = "chunks/[name]-[hash]";
+    options.treeShaking = true;
+    options.minify = true;
+    options.define = {
+      "process.env.NODE_ENV": '"production"',
+    };
+  },
+  async onSuccess() {
+    if (global.gc) {
+      global.gc();
+    }
+  },
 });

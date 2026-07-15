@@ -1,7 +1,7 @@
 {
   "name": "royco",
   "description": "SDK for building frontends on top of Royco Protocol",
-  "version": "0.9.357",
+  "version": "0.10.244",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -11,21 +11,27 @@
     "url": "https://github.com/roycoprotocol/royco-sdk"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=32768 tsup --config tsup.config.ts",
+    "build:ci": "cross-env NODE_OPTIONS=--max-old-space-size=32768 tsup --config tsup.config.ts --format cjs --format esm --dts --clean --minify --treeshake --splitting",
     "release": "pnpm run build && changeset publish",
     "lint": "tsc",
     "prepare:market-map": "tsx scripts/constants/generate-market-map.ts",
     "prepare:token-map": "tsx scripts/constants/generate-token-map.ts",
-    "prepare:test": "tsx temp/test/index.ts"
+    "prepare:test": "tsx temp/test/index.ts",
+    "boyco:stats": "tsx sdk/boyco/stats/index.ts",
+    "boyco:lp": "tsx sdk/boyco/stats/lp-token-quotes.ts",
+    "corn:kernel": "tsx sdk/corn/kernel-market/get-all-positions.ts",
+    "boyco:receipt": "tsx sdk/boyco/receipt-tokens/insert-tokens.ts",
+    "boyco:input": "tsx sdk/boyco/input-tokens/insert-tokens.ts",
+    "boyco:static": "tsx sdk/boyco/stats/static-tvl.ts",
+    "boyco:supabase:positions": "tsx sdk/boyco/receipt-tokens/insert-into-supabase.ts",
+    "generate:api": "swagger-typescript-api generate -p ./sdk/api/openapi.json -o ./sdk/api --modular --axios --extract-request-params --extract-request-body --extract-response-body --extract-response-error"
   },
   "keywords": [
     "royco"
   ],
   "author": "Royco Protocol",
   "license": "MIT",
-  "publishConfig": {
-    "access": "public"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -81,57 +87,66 @@
       "types": "./dist/boyco/index.d.ts",
       "import": "./dist/boyco/index.js",
       "require": "./dist/boyco/index.cjs"
+    },
+    "./sonic": {
+      "types": "./dist/sonic/index.d.ts",
+      "import": "./dist/sonic/index.js",
+      "require": "./dist/sonic/index.cjs"
+    },
+    "./vault": {
+      "types": "./dist/vault/index.d.ts",
+      "import": "./dist/vault/index.js",
+      "require": "./dist/vault/index.cjs"
+    },
+    "./transaction": {
+      "types": "./dist/transaction/index.d.ts",
+      "import": "./dist/transaction/index.js",
+      "require": "./dist/transaction/index.cjs"
+    },
+    "./api": {
+      "types": "./dist/api/index.d.ts",
+      "import": "./dist/api/index.js",
+      "require": "./dist/api/index.cjs"
     }
   },
   "dependencies": {
     "@changesets/cli": "^2.27.1",
-    "@radix-ui/react-icons": "^1.3.0",
-    "@rainbow-me/rainbowkit": "^2.2.1",
-    "@supabase-cache-helpers/postgrest-react-query": "^1.6.2",
     "@supabase/postgrest-js": "^1.16.3",
     "@supabase/ssr": "^0.3.0",
     "@supabase/supabase-js": "^2.43.1",
-    "@tanstack/query-core": "^5.62.1",
     "@tanstack/react-query": "^5.62.0",
-    "@tanstack/react-query-devtools": "^5.61.3",
-    "@tanstack/react-table": "^8.17.0",
     "@types/node": "^20.17.9",
     "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "@wagmi/core": "^2.10.3",
     "@weiroll/weiroll.js": "^0.3.0",
     "abitype": "^1.0.6",
-    "autoprefixer": "^10.4.19",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.1",
-    "cross-env": "^7.0.3",
-    "cross-fetch": "^4.0.0",
-    "csv-parse": "^5.6.0",
+    "axios": "^1.8.4",
     "dotenv": "^16.4.5",
     "ethers": "^5.4.4",
-    "glob": "^10.4.1",
-    "lodash": "^4.17.21",
-    "lucide-react": "^0.379.0",
-    "postcss": "^8.4.38",
+    "graphql-request": "^7.1.2",
     "prettier": "^3.4.1",
-    "react": "^18",
-    "react-dom": "^18",
-    "tailwind-merge": "^2.3.0",
-    "tailwindcss": "^3.4.3",
-    "tailwindcss-animate": "^1.0.7",
-    "ts-node": "^10.9.2",
+    "swagger-typescript-api": "^13.1.1",
     "tsup": "^8.0.2",
     "tsx": "^4.19.2",
     "typescript": "^5.4.5",
     "validator": "^13.12.0",
-    "viem": "^2.22.1",
-    "wagmi": "^2.8.1",
+    "viem": "2.24.3",
+    "wagmi": "2.14.12",
     "zod": "^3.23.8"
   },
   "dist-hash": "27382c05a5b66ae03c57558dd4ce90fd263683c40902a735efdc4a16916af2da",
-  "lastPublishedCommit": "d373ec6860783dcc18c84c8a6de2c91180e28566",
+  "lastPublishedCommit": "6dfbd5896dca7b93b3ecd227b7f5938d03b57ec4",
+  "peerDependencies": {
+    "@tanstack/react-query-devtools": "^5.61.3",
+    "@tanstack/react-table": "^8.17.0",
+    "@wagmi/core": "^2.10.3",
+    "lodash": "^4.17.21"
+  },
   "devDependencies": {
     "@types/lodash": "^4.17.14",
+    "csv-writer": "^1.6.0",
+    "cross-env": "^7.0.3",
+    "graphql": "^16.10.0",
+    "openapi-typescript": "^7.6.1",
     "supabase": "^2.6.8"
   }
 }

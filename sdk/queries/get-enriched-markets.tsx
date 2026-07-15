@@ -19,6 +19,11 @@ import {
   calculateBeraYield,
   getAllBeraMarkets,
 } from "@/sdk/boyco";
+import { getTokenQuotesQueryFunction } from "./get-token-quotes";
+import { id } from "ethers/lib/utils";
+import { SONIC_CHAIN_ID, SONIC_ROYCO_GEM_BOOST_ID } from "../sonic";
+import { calculateSonicYield, getAllSonicMarkets } from "../sonic/sonic-yield";
+import { boycoLinks } from "../boyco/links";
 
 export type MarketFilter = {
   id: string;
@@ -154,6 +159,14 @@ export type EnrichedMarketDataType =
       }
     >;
     incentive_ids?: Array<string>;
+    boyco?: {
+      bera_merkle_id?: string | null;
+      native_incentive_link?: string | null;
+      external_incentives?: Array<{
+        label: string;
+        link: string;
+      }> | null;
+    };
   };
 
 export type GetEnrichedMarketsQueryParams = {
@@ -522,25 +535,47 @@ export const getEnrichedMarketsWithBeraYield = async ({
   is_verified,
   custom_token_data,
 }: GetEnrichedMarketsQueryOptionsParams) => {
-  const [allBeraMarkets, result] = await Promise.all([
-    getAllBeraMarkets({
-      client,
-      customTokenData: custom_token_data ?? [],
-    }),
-    getEnrichedMarketsQueryFunction({
-      client,
-      chain_id,
-      market_type,
-      market_id,
-      page_index,
-      page_size,
-      filters,
-      sorting,
-      search_key,
-      is_verified,
-      custom_token_data,
-    }),
-  ]);
+  const [allBeraMarkets, allSonicMarkets, result, beraQuote] =
+    await Promise.all([
+      getAllBeraMarkets({
+        client,
+        customTokenData: custom_token_data ?? [],
+      }),
+      getAllSonicMarkets({
+        client,
+        customTokenData: custom_token_data ?? [],
+      }),
+      getEnrichedMarketsQueryFunction({
+        client,
+        chain_id,
+        market_type,
+        market_id,
+        page_index,
+        page_size,
+        filters,
+        sorting,
+        search_key,
+        is_verified,
+        custom_token_data,
+      }),
+      getTokenQuotesQueryFunction({
+        client,
+        token_ids: [BERA_TOKEN_ID],
+      }),
+    ]);
+
+  let currentBeraQuote = undefined;
+
+  if (!!beraQuote && !!beraQuote[0]) {
+    currentBeraQuote = [
+      {
+        token_id: BERA_TOKEN_ID,
+        price: beraQuote[0].price.toString(),
+        total_supply: beraQuote[0].total_supply.toString(),
+        fdv: beraQuote[0].fdv.toString(),
+      },
+    ];
+  }
 
   if (!!result.data && !!allBeraMarkets) {
     // Bera Yield
@@ -548,7 +583,10 @@ export const getEnrichedMarketsWithBeraYield = async ({
       if (row.category === "boyco") {
         const bera_annual_change_ratio = calculateBeraYield({
           enrichedMarket: row as EnrichedMarketDataType,
-          customTokenData: custom_token_data ?? [],
+          customTokenData: [
+            ...(custom_token_data ?? []),
+            ...(currentBeraQuote ?? []),
+          ],
           markets: allBeraMarkets,
         });
 
@@ -564,6 +602,49 @@ export const getEnrichedMarketsWithBeraYield = async ({
 
         const annual_change_ratio =
           (row.annual_change_ratio || 0) + bera_annual_change_ratio;
+
+        let boyco = null;
+
+        if (!!row && row.market_id) {
+          boyco = {
+            native_incentive_link: boycoLinks["native"][row.market_id],
+            bera_merkle_id: boycoLinks["merkle"][row.market_id],
+            external_incentives: boycoLinks["external"][row.market_id],
+          };
+        }
+
+        return {
+          ...row,
+          yield_breakdown,
+          annual_change_ratio,
+          boyco,
+        };
+      } else if (row.chain_id === SONIC_CHAIN_ID) {
+        const sonic_gem_boost_annual_change_ratio = calculateSonicYield({
+          enrichedMarket: row as EnrichedMarketDataType,
+          customTokenData: [...(custom_token_data ?? [])],
+          markets: allSonicMarkets,
+        });
+
+        if (
+          sonic_gem_boost_annual_change_ratio === undefined ||
+          sonic_gem_boost_annual_change_ratio === null
+        ) {
+          return row;
+        }
+
+        const yield_breakdown = [
+          ...row.yield_breakdown,
+          {
+            ...getSupportedToken(SONIC_ROYCO_GEM_BOOST_ID),
+            category: "native",
+            label: "Gem Boost",
+            annual_change_ratio: sonic_gem_boost_annual_change_ratio,
+          },
+        ];
+
+        const annual_change_ratio =
+          (row.annual_change_ratio || 0) + sonic_gem_boost_annual_change_ratio;
 
         return {
           ...row,

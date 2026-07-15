@@ -33,4 +33,49 @@ Earn DEX LP fees, as well as rewards from Berachain, Infrared and Kodiak. This i
       },
     },
   ],
+
+  native_yield: [
+    {
+      token_id: "1-0xaf5191b0de278c7286d6c7cc6ab6bb8a73ba2cd6",
+      label: "Stargate Incentives",
+      annual_change_ratio: async ({ roycoClient, chainClient }) => {
+        const STG_REWARD_AMOUNT = 1999000;
+        const LOCK_PERIOD_DAYS = 90;
+        let annual_change_ratio = 0;
+
+        try {
+          const market_req = await roycoClient.rpc("get_enriched_markets", {
+            chain_id: 1,
+            market_type: 0,
+            market_id:
+              "0x17ffd16948c053cc184c005477548e559566879a0e2847e87ebd1111c602535c",
+            page_index: 0,
+            page_size: 1,
+          });
+
+          const market = market_req.data?.data?.[0];
+
+          const tokenQuotes = await roycoClient.rpc("get_token_quotes", {
+            token_ids: ["1-0xaf5191b0de278c7286d6c7cc6ab6bb8a73ba2cd6"],
+          });
+
+          const stgPrice = tokenQuotes.data?.[0]?.price ?? 0;
+
+          // Calculate annual STG rewards value
+          const annualRewardValueUSD =
+            STG_REWARD_AMOUNT * stgPrice * (365 / LOCK_PERIOD_DAYS);
+
+          // Calculate APY based on TVL
+          if (market?.total_value_locked && market.total_value_locked > 0) {
+            annual_change_ratio =
+              annualRewardValueUSD / market.total_value_locked;
+          }
+        } catch (error) {
+          console.error("Error fetching STG price:", error);
+        }
+
+        return annual_change_ratio;
+      },
+    },
+  ],
 });
